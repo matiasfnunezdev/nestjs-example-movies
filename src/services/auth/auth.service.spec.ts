@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { FirebaseAuthProvider } from '@/_core/firebase/auth.providers';
 import { UserService } from '../user/user.service';
 import { RegisterDto, LoginDto } from '@/_domain/dto/auth.dto';
-import { BadRequestException, Logger } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { auth } from 'firebase-admin';
 import { getAuth, signInWithEmailAndPassword, UserCredential, User } from 'firebase/auth';
 import axios from 'axios';
@@ -88,27 +88,22 @@ describe('AuthService', () => {
         metadata: {
           creationTime: new Date().toISOString(),
           lastSignInTime: new Date().toISOString(),
-          toJSON: () => ({ creationTime: new Date().toISOString(), lastSignInTime: new Date().toISOString() }),
         },
-        toJSON: () => ({
-          uid: '1',
-          email: 'test@example.com',
-          emailVerified: false,
-          disabled: false,
-          metadata: {
-            creationTime: new Date().toISOString(),
-            lastSignInTime: new Date().toISOString(),
-            toJSON: () => ({ creationTime: new Date().toISOString(), lastSignInTime: new Date().toISOString() }),
-          },
-        }),
-        providerData: []
-      };
+        providerData: [],
+        toJSON: jest.fn().mockReturnValue({}),
+      } as unknown as UserRecord;
 
       mockFirebaseAuth.createUser.mockResolvedValue(mockUser);
+      mockUserService.upsert.mockResolvedValue({ user: registerDto.email, userId: mockUser.uid, role: 'user' });
 
       const result = await authService.register(registerDto);
       expect(result).toEqual(mockUser);
       expect(mockFirebaseAuth.createUser).toHaveBeenCalledWith(registerDto);
+      expect(mockUserService.upsert).toHaveBeenCalledWith({
+        user: registerDto.email,
+        userId: mockUser.uid,
+        role: 'user',
+      });
     });
 
     it('should throw BadRequestException if registration fails', async () => {
@@ -128,33 +123,9 @@ describe('AuthService', () => {
         user: {
           uid: '12345',
           email: 'test@example.com',
-          emailVerified: false,
-          displayName: null,
-          isAnonymous: false,
-          providerData: [],
-          refreshToken: '',
-          phoneNumber: null,
-          photoURL: null,
-          getIdToken: jest.fn(),
-          getIdTokenResult: jest.fn(),
-          reload: jest.fn(),
-          delete: jest.fn(),
-          toJSON: jest.fn(),
-          sendEmailVerification: jest.fn(),
-          sendPasswordResetEmail: jest.fn(),
-          linkWithCredential: jest.fn(),
-          reauthenticateWithCredential: jest.fn(),
-          linkAndRetrieveDataWithCredential: jest.fn(),
-          reauthenticateAndRetrieveDataWithCredential: jest.fn(),
-          linkWithPhoneNumber: jest.fn(),
-          unlink: jest.fn(),
-          updateEmail: jest.fn(),
-          updatePassword: jest.fn(),
-          updatePhoneNumber: jest.fn(),
-          updateProfile: jest.fn(),
-        } as unknown as User,
+        } as User,
         providerId: '',
-        operationType: 'link'
+        operationType: 'signIn',
       };
 
       const mockUser: UserDocument = { userId: '12345', role: 'user' as UserRoleType, created: new Date().toISOString() };

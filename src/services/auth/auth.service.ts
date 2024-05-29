@@ -25,6 +25,11 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     try {
       const response = await this.firebaseAuth.createUser(registerDto);
+      await this.userService.upsert({
+        user: registerDto.email,
+        userId: response.uid,
+        role: 'user',
+      });
       return response;
     } catch (error) {
       Logger.log('error', error);
