@@ -1,0 +1,1 @@
+export const FIREBASE_AUTH_URL = (apiKey: string) => `https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=${apiKey}`
